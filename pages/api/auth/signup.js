@@ -1,28 +1,47 @@
-import { hashPassword } from '../../../lib/auth';
-import { connectToDatabase } from '../../../lib/db';
+import { hashPassword } from "../../../lib/auth";
+import { connectToDatabase } from "../../../lib/db";
 
-async function handler(req,res) {
-    const data = req.body;
+async function handler(req, res) {
+  if (req.method !== "POST") {
+    return;
+  }
+  const data = req.body;
 
-    const {email,password} = data;
+  const { email, password } = data;
 
-    if(!email || !email.includes('@') || !password || password.trim().length < 7){
-        res.status(422).json({message: 'Invalid input - password should'});
-        return;
-    }
+  if (
+    !email ||
+    !email.includes("@") ||
+    !password ||
+    password.trim().length < 7
+  ) {
+    res.status(422).json({ message: "Invalid input - password should" });
+    return;
+  }
 
-    const client = await connectToDatabase();
+  const client = await connectToDatabase();
 
-    const db = client.db();
+  const db = client.db();
 
-    const hashedPassword = hashPassword(password)
+  const existingUser = await db.collection('users').findOne({email : email})
 
-    const result = db.collection('users').insertOne({
-        email : email,
-        password : hashedPassword
-    });
+  if(existingUser){
+    res.status(422).json({
+      message: 'User exists already!'
+    })
+    client.close();
+    return;
+  }
 
-    res.status(201).json({message:' Create User~'});
+  const hashedPassword = await hashPassword(password);
+
+  const result = db.collection("users").insertOne({
+    email: email,
+    password: hashedPassword,
+  });
+
+  res.status(201).json({ message: " Create User~" });
+  client.close();
 }
 
 export default handler;
