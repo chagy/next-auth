@@ -6,6 +6,7 @@ import AuthForm from "../components/auth/auth-form";
 function AuthPage() {
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
+
   useEffect(() => {
     getSession().then((session) => {
       if (session) {
